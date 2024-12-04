@@ -21,8 +21,6 @@ app.get('/movies', (req,res) => {
     try {
         await pgPool.connect()
         console.log('Database connected')
-        await pgPool.query("INSERT INTO company VALUES ('Kastellin lukio', 'Sairaalantie 14', 'Oulu')")
-        .then(console.log("Successful"))
         
     } catch (error) {
         console.log(error)
@@ -30,7 +28,7 @@ app.get('/movies', (req,res) => {
 
 app.get('/movie', async (req,res) => {
     try{
-        const result = await pgPool.query('SELECT * FROM company')
+        const result = await pgPool.query('SELECT * FROM movie')
         res.json(result.rows)
         console.log(result)
     } catch(e) {

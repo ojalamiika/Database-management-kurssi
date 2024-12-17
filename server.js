@@ -1,7 +1,12 @@
 import express from "express";
 import {pgPool} from './pg_connection.js'
+import { user } from "pg/lib/defaults.js";
 
 const app = express()
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+
 
 app.listen(3001, () => {
     console.log('Running!n')
@@ -67,17 +72,30 @@ app.get('/moviebykey/:key', async (req,res) => {
 })
 
 app.post('/addUser', async (req, res) => {
-    const uname = req.body.uname
-    const fname = req.body.fname
-    const password = req.body.password
-    const birth_date = req.body.birth_date
+    const { username, name, password } = req.body;
+
+    if (!username || !name || !password) {  // Checking for invalid input
+        console.log(username,name,password)
+        return res.status(400).json({ message: 'Missing required fields' });
+
+    }
 
     try{
-        const result = await pgPool.query("INSERT INTO users VALUES username=$1, name=$2, password=$3, birth_date=$4", [uname, fname,password,birth_date])
-        
 
+        // Automatic input for new id
+        const result = await pgPool.query("SELECT COUNT(*) AS count FROM users"); 
+        const newId = parseInt(result.rows[0].count, 10) + 1;
+
+        await pgPool.query(
+            "INSERT INTO users (username, name, password, user_id) VALUES ($1, $2, $3, $4)",
+            [username, name, password, newId]
+        );
+        if(result.rows.length === 0)    // Error handling
+            return res.status(404).json({ message: 'Could not add user' });
+        res.json({ message: 'User added'})
+        console.log('Successfully added user' + username)
     } catch(e) {
-
+        console.log(e)
     }
 
 })

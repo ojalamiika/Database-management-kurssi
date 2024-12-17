@@ -1,6 +1,6 @@
 import express from "express";
 import {pgPool} from './pg_connection.js'
-import { user } from "pg/lib/defaults.js";
+import { startSession } from "pg/lib/crypto/sasl.js";
 
 const app = express()
 app.use(express.json());
@@ -97,5 +97,38 @@ app.post('/addUser', async (req, res) => {
     } catch(e) {
         console.log(e)
     }
+})
+app.post('/addReview', async (req,res) => { 
+    const {customer_id, movie_id, stars, review_text} = req.body
 
+    // review ID
+    const result = await pgPool.query("SELECT COUNT(*) AS count FROM reviews"); 
+    const newId = parseInt(result.rows[0].count, 10) + 1;
+
+    // current date
+    const review_date = new Date()
+    const date = review_date.getFullYear() + "-" + (review_date.getMonth() +1 ) + "-" + review_date.getDate()
+
+    // Checking for invalid input
+    if (!customer_id || !movie_id, !review_date, !review_text) {  
+        console.log(customer_id,movie_id)
+        return res.status(400).json({ message: 'Missing required fields' });
+    }
+    if(stars > 5)
+        return res.status(400).json({ message: 'Star count over 5' });
+    if(Number(stars)== isNaN)
+        return res.status(400).json({ message: 'Star rating not a number' });
+
+    try{
+        const result = await pgPool.query("INSERT INTO reviews (review_id, customer_id, review_date, movie_id, stars, review_text) VALUES ($1, $2, $3, $4, $5, $6)",
+        [newId, customer_id, date, movie_id, stars, review_text]
+        )
+        
+        if(result.rows.length === 0)    // Error handling
+            return res.status(404).json({ message: 'Could not add review' });
+        
+    }catch(e)
+    {
+        console.log(e);
+    }
 })

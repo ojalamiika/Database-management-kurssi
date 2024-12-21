@@ -71,6 +71,33 @@ app.get('/moviebykey/:key', async (req,res) => {
     }
 })
 
+app.post('/addMovie', async (req, res) => {
+    const {movie_name, year, genre, keywords} = req.body
+
+    if (!movie_name || !year || !genre || !keywords) {  // Checking for invalid input
+        console.log(movie_name, year,genre,keywords)
+        return res.status(400).json({ message: 'Missing required fields' })
+    }
+    
+
+    try {
+        const result = await pgPool.query("SELECT MAX(movie_id) as largest_id FROM movie"); 
+        const newId = parseInt(result.rows[0].largest_id, 10) + 1
+
+        const result2 = await pgPool.query(
+            "INSERT INTO movie (movie_id, movie_name, year, genre, keywords) VALUES ($1, $2, $3, $4, $5)",
+            [newId, movie_name, year, genre, keywords]
+        )
+        
+        res.json({ message: 'User added'})
+        console.log('Successfully added movie ' + movie_name)
+    }  catch(e)
+    {
+        console.log(e);
+               
+    }
+})
+
 app.post('/addUser', async (req, res) => {
     const { username, name, password } = req.body;
 
@@ -86,11 +113,11 @@ app.post('/addUser', async (req, res) => {
         const result = await pgPool.query("SELECT COUNT(*) AS count FROM users"); 
         const newId = parseInt(result.rows[0].count, 10) + 1;
 
-        await pgPool.query(
+        const result2 = await pgPool.query(
             "INSERT INTO users (username, name, password, user_id) VALUES ($1, $2, $3, $4)",
             [username, name, password, newId]
         );
-        if(result.rows.length === 0)    // Error handling
+        if(result2.rows.length === 0)    // Error handling
             return res.status(404).json({ message: 'Could not add user' });
         res.json({ message: 'User added'})
         console.log('Successfully added user' + username)
